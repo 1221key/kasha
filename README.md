@@ -1,0 +1,2 @@
+# kasha
+a javascript library
