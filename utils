@@ -1,4 +1,4 @@
-var KS={};
+var KS = {};
 /**
  * 工具函数包
  * @file
@@ -12,7 +12,62 @@ var KS={};
  * @unfile
  */
 var utils = KS.utils = {
- /**
+
+	/**
+     * 用给定的迭代器遍历对象
+     * @method each
+     * @param { Object } obj 需要遍历的对象
+     * @param { Function } iterator 迭代器， 该方法接受两个参数， 第一个参数是当前所处理的value， 第二个参数是当前遍历对象的key
+     * @example
+     * ```javascript
+     * var demoObj = {
+     *     key1: 1,
+     *     key2: 2
+     * };
+     *
+     * //output: key1: 1, key2: 2
+     * KS.utils.each( demoObj, funciton ( value, key ) {
+     *
+     *     console.log( key + ":" + value );
+     *
+     * } );
+     * ```
+     */
+
+    /**
+     * 用给定的迭代器遍历数组或类数组对象
+     * @method each
+     * @param { Array } array 需要遍历的数组或者类数组
+     * @param { Function } iterator 迭代器， 该方法接受两个参数， 第一个参数是当前所处理的value， 第二个参数是当前遍历对象的key
+     * @example
+     * ```javascript
+     * var divs = document.getElmentByTagNames( "div" );
+     *
+     * //output: 0: DIV, 1: DIV ...
+     * KS.utils.each( divs, funciton ( value, key ) {
+     *
+     *     console.log( key + ":" + value.tagName );
+     *
+     * } );
+     * ```
+     */
+    each : function(obj, iterator, context) {
+        if (obj == null) return;
+        if (obj.length === +obj.length) {
+            for (var i = 0, l = obj.length; i < l; i++) {
+                if(iterator.call(context, obj[i], i, obj) === false)
+                    return false;
+            }
+        } else {
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    if(iterator.call(context, obj[key], key, obj) === false)
+                        return false;
+                }
+            }
+        }
+    },
+    /**
      * 移除数组array中所有的元素item
      * @method removeItem
      * @param { Array } array 要移除元素的目标数组
@@ -28,7 +83,7 @@ var utils = KS.utils = {
      *
      * ```
      */
-    removeItem:function (array, item) {
+    removeItem: function(array, item) {
         for (var i = 0, l = array.length; i < l; i++) {
             if (array[i] === item) {
                 array.splice(i, 1);
@@ -43,10 +98,10 @@ var utils = KS.utils = {
      * @param { String } str 需要删除首尾空格的字符串
      * @return { String } 删除了首尾的空格后的字符串
      */
-    trim:function (str) {
+    trim: function(str) {
         return str.replace(/(^[ \t\n\r]+)|([ \t\n\r]+$)/g, '');
     },
- /**
+    /**
      * 将str中的html符号转义,将转义“'，&，<，"，>”五个字符
      * @method unhtml
      * @param { String } str 需要转义的字符串
@@ -60,17 +115,17 @@ var utils = KS.utils = {
      *
      * ```
      */
-    unhtml:function (str, reg) {
-        return str ? str.replace(reg || /[&<">'](?:(amp|lt|quot|gt|#39|nbsp|#\d+);)?/g, function (a, b) {
+    unhtml: function(str, reg) {
+        return str ? str.replace(reg || /[&<">'](?:(amp|lt|quot|gt|#39|nbsp|#\d+);)?/g, function(a, b) {
             if (b) {
                 return a;
             } else {
                 return {
-                    '<':'&lt;',
-                    '&':'&amp;',
-                    '"':'&quot;',
-                    '>':'&gt;',
-                    "'":'&#39;'
+                    '<': '&lt;',
+                    '&': '&amp;',
+                    '"': '&quot;',
+                    '>': '&gt;',
+                    "'": '&#39;'
                 }[a]
             }
 
@@ -82,19 +137,19 @@ var utils = KS.utils = {
      * @param  { RegExp } reg 自定义的正则
      * @return { String }     转义后的字符串
      */
-    unhtmlForUrl:function (str, reg) {
-        return str ? str.replace(reg || /[<">']/g, function (a) {
+    unhtmlForUrl: function(str, reg) {
+        return str ? str.replace(reg || /[<">']/g, function(a) {
             return {
-                '<':'&lt;',
-                '&':'&amp;',
-                '"':'&quot;',
-                '>':'&gt;',
-                "'":'&#39;'
+                '<': '&lt;',
+                '&': '&amp;',
+                '"': '&quot;',
+                '>': '&gt;',
+                "'": '&#39;'
             }[a]
 
         }) : '';
     },
- /**
+    /**
      * 将str中的转义字符还原成html字符
      * @see KS.utils.unhtml(String);
      * @method html
@@ -110,15 +165,15 @@ var utils = KS.utils = {
      *
      * ```
      */
-    html:function (str) {
-        return str ? str.replace(/&((g|l|quo)t|amp|#39|nbsp);/g, function (m) {
+    html: function(str) {
+        return str ? str.replace(/&((g|l|quo)t|amp|#39|nbsp);/g, function(m) {
             return {
-                '&lt;':'<',
-                '&amp;':'&',
-                '&quot;':'"',
-                '&gt;':'>',
-                '&#39;':"'",
-                '&nbsp;':' '
+                '&lt;': '<',
+                '&amp;': '&',
+                '&quot;': '"',
+                '&gt;': '>',
+                '&#39;': "'",
+                '&nbsp;': ' '
             }[m]
         }) : '';
     },
@@ -137,10 +192,10 @@ var utils = KS.utils = {
      *
      * ```
      */
-    cssStyleToDomStyle:function () {
-            cache = {};
-        return function (cssName) {
-            return cache[cssName] || (cache[cssName] = cssName.toLowerCase().replace(/-./g, function (match) {
+    cssStyleToDomStyle: function() {
+        cache = {};
+        return function(cssName) {
+            return cache[cssName] || (cache[cssName] = cssName.toLowerCase().replace(/-./g, function(match) {
                 return match.charAt(1).toUpperCase();
             }));
         };
@@ -185,7 +240,7 @@ var utils = KS.utils = {
      *
      * ```
      */
-    loadFile:function () {
+    loadFile: function() {
         var tmpList = [];
 
         function getItem(doc, obj) {
@@ -201,40 +256,40 @@ var utils = KS.utils = {
 
         }
 
-        return function (doc, obj, fn) {
+        return function(doc, obj, fn) {
             var item = getItem(doc, obj);
             if (item) {
-                if (item.ready) {//多次加载，后面的直接执行缓存里面的文件
+                if (item.ready) { //多次加载，后面的直接执行缓存里面的文件
                     fn && fn();
-                } else {//
-                    item.funs.push(fn)//把传入的回调保存起来
+                } else { //
+                    item.funs.push(fn) //把传入的回调保存起来
                 }
                 return;
             }
             tmpList.push({
-                doc:doc,
-                url:obj.src || obj.href,
-                funs:[fn]
+                doc: doc,
+                url: obj.src || obj.href,
+                funs: [fn]
             });
-            if (!doc.body) {//若没有body标签（不考虑dom性能）
+            if (!doc.body) { //若没有body标签（不考虑dom性能）
                 var html = [];
-                for (var p in obj) {//给动态加载的标签添加属性
-                    if (p == 'tag')continue;
+                for (var p in obj) { //给动态加载的标签添加属性
+                    if (p == 'tag') continue;
                     html.push(p + '="' + obj[p] + '"')
                 }
                 //把添加的标签插入到html中
                 doc.write('<' + obj.tag + ' ' + html.join(' ') + ' ></' + obj.tag + '>');
                 return;
             }
-            if (obj.id && doc.getElementById(obj.id)) {//传进来的标签的ID与页面已有标签ID冲突
+            if (obj.id && doc.getElementById(obj.id)) { //传进来的标签的ID与页面已有标签ID冲突
                 return;
             }
-            var element = doc.createElement(obj.tag);//有body标签，动态创建一个对应的标签
+            var element = doc.createElement(obj.tag); //有body标签，动态创建一个对应的标签
             delete obj.tag;
-            for (var p in obj) {//添加属性
+            for (var p in obj) { //添加属性
                 element.setAttribute(p, obj[p]);
             }
-            element.onload = element.onreadystatechange = function () {//动态加载的标签加载完毕后触发此事件
+            element.onload = element.onreadystatechange = function() { //动态加载的标签加载完毕后触发此事件
                 if (!this.readyState || /loaded|complete/.test(this.readyState)) {
                     item = getItem(doc, obj);
                     if (item.funs.length > 0) {
@@ -243,16 +298,16 @@ var utils = KS.utils = {
                             fi();
                         }
                     }
-                    element.onload = element.onreadystatechange = null;//清空加载标签的load事件
+                    element.onload = element.onreadystatechange = null; //清空加载标签的load事件
                 }
             };
-            element.onerror = function () {
-                throw Error('The load ' + (obj.href || obj.src) + ' fails,check the url settings of file ueditor.config.js ')
+            element.onerror = function() {
+                throw Error('The load ' + (obj.href || obj.src) + ' fails ')
             };
             doc.getElementsByTagName("head")[0].appendChild(element);
         }
     }(),
-/**
+    /**
      * 判断obj对象是否为空
      * @method isEmptyObject
      * @param { * } obj 需要判断的对象
@@ -282,10 +337,11 @@ var utils = KS.utils = {
      *
      * ```
      */
-    isEmptyObject:function (obj) {
+    isEmptyObject: function(obj) {
         if (obj == null) return true;
         if (this.isArray(obj) || this.isString(obj)) return obj.length === 0;
-        for (var key in obj) if (obj.hasOwnProperty(key)) return false;
+        for (var key in obj)
+            if (obj.hasOwnProperty(key)) return false;
         return true;
     },
     /**
@@ -296,7 +352,7 @@ var utils = KS.utils = {
      * @example
      * rgb(255,255,255)  => "#ffffff"
      */
-    fixColor:function (name, value) {
+    fixColor: function(name, value) {
         if (/color/i.test(name) && /rgba?/.test(value)) {
             var array = value.split(",");
             if (array.length > 3)
@@ -308,9 +364,9 @@ var utils = KS.utils = {
             }
             value = value.toUpperCase();
         }
-        return  value;
+        return value;
     },
- /**
+    /**
      * 把cm／pt为单位的值转换为px为单位的值
      * @method transUnitToPx
      * @param { String } 待转换的带单位的字符串
@@ -326,12 +382,12 @@ var utils = KS.utils = {
      *
      * ```
      */
-    transUnitToPx:function (val) {
+    transUnitToPx: function(val) {
         if (!/(pt|cm)/.test(val)) {
             return val
         }
         var unit;
-        val.replace(/([\d.]+)(\w+)/, function (str, v, u) {
+        val.replace(/([\d.]+)(\w+)/, function(str, v, u) {
             val = v;
             unit = u;
         });
@@ -360,17 +416,16 @@ var utils = KS.utils = {
      *
      * ```
      */
-    domReady:function () {
+    domReady: function() {
 
         var fnArr = [];
 
         function doReady(doc) {
             //确保onready只执行一次
             doc.isReady = true;
-            for (var ci; ci = fnArr.pop(); ci()) {
-            }
+            for (var ci; ci = fnArr.pop(); ci()) {}
         }
-        return function (onready, win) {
+        return function(onready, win) {
             win = win || window;
             var doc = win.document;
             onready && fnArr.push(onready);
@@ -378,11 +433,11 @@ var utils = KS.utils = {
                 doReady(doc);
             } else {
                 doc.isReady && doReady(doc);
-                doc.addEventListener("DOMContentLoaded", function () {
+                doc.addEventListener("DOMContentLoaded", function() {
                     doc.removeEventListener("DOMContentLoaded", arguments.callee, false);
                     doReady(doc);
                 }, false);
-                win.addEventListener('load', function () {
+                win.addEventListener('load', function() {
                     doReady(doc)
                 }, false);
             }
@@ -390,24 +445,111 @@ var utils = KS.utils = {
         }
     }(),
     //格式化url
-   formatUrl:function (url) {
-	    var u = url.replace(/&&/g, '&');
-	    u = u.replace(/\?&/g, '?');
-	    u = u.replace(/&$/g, '');
-	    u = u.replace(/&#/g, '#');
-	    u = u.replace(/&+/g, '&');
-	    return u;
-	},
-   clearEmptyAttrs : function(obj){
-		for(var p in obj){
-		    if(obj[p] === ''){
-		        delete obj[p]
-		    }
-		}
-		return obj;
+    formatUrl: function(url) {
+        var u = url.replace(/&&/g, '&');
+        u = u.replace(/\?&/g, '?');
+        u = u.replace(/&$/g, '');
+        u = u.replace(/&#/g, '#');
+        u = u.replace(/&+/g, '&');
+        return u;
     },
+    clearEmptyAttrs: function(obj) {
+        for (var p in obj) {
+            if (obj[p] === '') {
+                delete obj[p]
+            }
+        }
+        return obj;
+    },
+    extend: function() { //from jq
 
+        var src, copyIsArray, copy, name, options, clone,
+            target = arguments[0] || {},
+            i = 1,
+            length = arguments.length,
+            deep = false;
 
+        // Handle a deep copy situation
+        if (typeof target === "boolean") {
+            deep = target;
+            target = arguments[1] || {};
+
+            // skip the boolean and the target
+            i = 2;
+        }
+
+        // Handle case when target is a string or something (possible in deep copy)
+        if (typeof target !== "object" && !KS.utils.isFunction(target)) {
+            target = {};
+        }
+
+        for (; i < length; i++) {
+
+            // Only deal with non-null/undefined values
+            if ((options = arguments[i]) != null) {
+
+                // Extend the base object
+                for (name in options) {
+                    src = target[name];
+                    copy = options[name];
+
+                    // Prevent never-ending loop
+                    if (target === copy) {
+                        continue;
+                    }
+
+                    // Recurse if we're merging plain objects or arrays
+                    if (deep && copy && (KS.utils.isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
+                        if (copyIsArray) {
+                            copyIsArray = false;
+                            clone = src && Array.isArray(src) ? src : [];
+
+                        } else {
+                            clone = src && KS.utils.isPlainObject(src) ? src : {};
+                        }
+
+                        // Never move original objects, clone them
+                        target[name] = KS.utils.extend(deep, clone, copy);
+
+                        // Don't bring in undefined values
+                    } else if (copy !== undefined) {
+                        target[name] = copy;
+                    }
+                }
+            }
+        }
+
+        // Return the modified object
+        return target;
+    },
+    isPlainObject: function(obj) {//from jq
+        // Not plain objects:
+        // - Any object or value whose internal [[Class]] property is not "[object Object]"
+        // - DOM nodes
+        // - window
+        if (!KS.utils.isObject(obj, "Object") || obj.nodeType || KS.utils.isWindow(obj)) {
+            return false;
+        }
+
+        if (obj.constructor &&
+            !({}).hasOwnProperty.call(obj.constructor.prototype, "isPrototypeOf")) {
+            return false;
+        }
+        //如果函数执行到这里还没有return ,可以确定参数obj 是一个通过{}或者new Object构造的纯粹的对象
+        // If the function hasn't returned already, we're confident that
+        // |obj| is a plain object, created by {} or constructed with new Object
+        return true;
+    },
+    isEmptyObject: function(obj) {
+        var name;
+        for (name in obj) {
+            return false;
+        }
+        return true;
+    },
+    isWindow: function(obj) {
+        return obj != null && obj === obj.window;
+    },
 }
 
 /**
@@ -452,7 +594,12 @@ var utils = KS.utils = {
  * @return { Boolean } 给定的对象是否是普通对象
  */
 
-['String', 'Function', 'Array', 'Number', 'RegExp', 'Object', 'Date'].forEach(function (v) {
+// ['String', 'Function', 'Array', 'Number', 'RegExp', 'Object', 'Date'].forEach(function(v) {
+//     KS.utils['is' + v] = function(obj) {
+//         return Object.prototype.toString.apply(obj) == '[object ' + v + ']';
+//     }
+// });
+utils.each(['String', 'Function', 'Array', 'Number', 'RegExp', 'Object', 'Date'], function (v) {
     KS.utils['is' + v] = function (obj) {
         return Object.prototype.toString.apply(obj) == '[object ' + v + ']';
     }
