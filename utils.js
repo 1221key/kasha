@@ -703,6 +703,28 @@ var utils = KS.utils = {
 
         return true;
     },
+    max:function(){
+        if(arguments.length==0){return false}
+        if(arguments.length>1){
+            return Math.max.apply(Math,arguments)
+        }else {
+            if (KS.utils.isArray( arguments[0])){
+                return Math.max.apply(Math,arguments[0])
+            }
+            return arguments[0]
+        }
+    },
+    min:function(){
+        if(arguments.length==0){return false}
+        if(arguments.length>1){
+            return Math.min.apply(Math,arguments)
+        }else {
+            if (KS.utils.isArray( arguments[0])){
+                return Math.min.apply(Math,arguments[0])
+            }
+            return arguments[0]
+        }
+    },
     // 判断是否为 DOM 元素
     isElement: function(obj) {
         // 确保 obj 不是 null, undefined 等假值
