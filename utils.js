@@ -13,7 +13,7 @@ var KS = {};
  */
 var utils = KS.utils = {
 
-	/**
+    /**
      * 用给定的迭代器遍历对象
      * @method each
      * @param { Object } obj 需要遍历的对象
@@ -51,17 +51,17 @@ var utils = KS.utils = {
      * } );
      * ```
      */
-    each : function(obj, iterator, context) {
+    each: function(obj, iterator, context) {
         if (obj == null) return;
         if (obj.length === +obj.length) {
             for (var i = 0, l = obj.length; i < l; i++) {
-                if(iterator.call(context, obj[i], i, obj) === false)
+                if (iterator.call(context, obj[i], i, obj) === false)
                     return false;
             }
         } else {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
-                    if(iterator.call(context, obj[key], key, obj) === false)
+                    if (iterator.call(context, obj[key], key, obj) === false)
                         return false;
                 }
             }
@@ -144,7 +144,8 @@ var utils = KS.utils = {
                 '&': '&amp;',
                 '"': '&quot;',
                 '>': '&gt;',
-                "'": '&#39;'
+                "'": '&#39;',
+                '`': '&#x60;'
             }[a]
 
         }) : '';
@@ -522,7 +523,7 @@ var utils = KS.utils = {
         // Return the modified object
         return target;
     },
-    isPlainObject: function(obj) {//from jq
+    isPlainObject: function(obj) { //from jq
         // Not plain objects:
         // - Any object or value whose internal [[Class]] property is not "[object Object]"
         // - DOM nodes
@@ -549,6 +550,164 @@ var utils = KS.utils = {
     },
     isWindow: function(obj) {
         return obj != null && obj === obj.window;
+    },
+    // 返回一个 [min, max] 范围内的任意整数
+    random: function(min, max) {
+        if (max == null) {
+            max = min;
+            min = 0;
+        }
+        return min + Math.floor(Math.random() * (max - min + 1));
+    },
+    // 判断是否是有限的数字
+    isFinite: function(obj) {
+        //直接用现有方法
+        return isFinite(obj) && !KS.utils.isNaN(parseFloat(obj));
+    },
+    isNaN: function(obj) {
+        return KS.utils.isNumber(obj) && obj !== +obj;
+    },
+    isBoolean: function(obj) {
+        return obj === true || obj === false || Object.prototype.toString.call(obj) === '[object Boolean]';
+    },
+    // 判断是否是 null
+    isNull: function(obj) {
+        return obj === null;
+    },
+    // 判断是否是 undefined
+    // undefined 能被改写 （IE < 9）
+    // undefined 只是全局对象的一个属性
+    // 在局部环境能被重新定义
+    // 但是「void 0」始终是 undefined
+    isUndefined: function(obj) {
+        return obj === void 0;
+    },
+    // 判断对象中是否有指定 key
+    // own properties, not on a prototype
+    has: function(obj, key) {
+        // obj 不能为 null 或者 undefined
+        return obj != null && Object.prototype.hasOwnProperty.call(obj, key);
+    },
+    // 判断是否是 ArrayLike Object
+    // 类数组，即拥有 length 属性并且 length 属性值为 Number 类型的元素
+    // 包括数组、arguments、HTML Collection 以及 NodeList 等等
+    // 包括类似 {length: 10} 这样的对象
+    // 包括字符串、函数等
+    isArrayLike: function(collection) {
+        // 返回参数 collection 的 length 属性值
+        function property(key) {
+            return function(obj) {
+                return obj == null ? void 0 : obj[key];
+            };
+        }
+        // getLength 函数
+        // 该函数传入一个参数，返回参数的 length 属性值
+        // 用来获取 array 以及 arrayLike 元素的 length 属性值
+        var getLength = property('length');
+        // Math.pow(2, 53) - 1 是 JavaScript 中能精确表示的最大数字
+        var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+
+        var length = getLength(collection);
+        return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+    },
+    // 将一个对象的 key-value 键值对颠倒
+    // 即原来的 key 为 value 值，原来的 value 值为 key 值
+    // 需要注意的是，value 值不能重复（不然后面的会覆盖前面的）
+    // 且新构造的对象符合对象构造规则
+    // 并且返回新构造的对象
+    invert: function(obj) {
+        // 返回的新的对象
+        var result = {};
+        var keys = KS.utils.keys(obj);
+        for (var i = 0, length = keys.length; i < length; i++) {
+            result[obj[keys[i]]] = keys[i];
+        }
+        return result;
+    },
+    // _.keys({one: 1, two: 2, three: 3});
+    // => ["one", "two", "three"]
+    // ===== //
+    // 返回一个对象的 keys 组成的数组
+    // 仅返回 own enumerable properties 组成的数组
+    keys: function(obj) {
+        // 容错
+        // 如果传入的参数不是对象，则返回空数组
+        if (!KS.utils.isObject(obj)) return [];
+
+        // 如果浏览器支持 ES5 Object.key() 方法
+        // 则优先使用该方法
+        if (Object.key) return Object.key(obj);
+
+        var keys = [];
+
+        // own enumerable properties
+        for (var key in obj)
+        // hasOwnProperty
+            if (KS.utils.has(obj, key)) keys.push(key);
+
+        return keys;
+    },
+    // 返回一个对象的 keys 数组
+    // 不仅仅是 own enumerable properties
+    // 还包括原型链上继承的属性
+    allKeys: function(obj) {
+        // 容错
+        // 不是对象，则返回空数组
+        if (!KS.utils.isObject(obj)) return [];
+
+        var keys = [];
+        for (var key in obj) keys.push(key);
+
+        return keys;
+    },
+    // _.values({one: 1, two: 2, three: 3});
+    // => [1, 2, 3]
+    // ===== //
+    // 将一个对象的所有 values 值放入数组中
+    // 仅限 own properties 上的 values
+    // 不包括原型链上的
+    // 并返回该数组
+    values: function(obj) {
+        // 仅包括 own properties
+        var keys = KS.utils.keys(obj);
+        var length = keys.length;
+        var values = Array(length);
+        for (var i = 0; i < length; i++) {
+            values[i] = obj[keys[i]];
+        }
+        return values;
+    },
+    // attrs 参数为一个对象
+    // 判断 object 对象中是否有 attrs 中的所有 key-value 键值对
+    // 返回布尔值
+    isMatch: function(object, attrs) {
+        // 提取 attrs 对象的所有 keys
+        var keys = KS.utils.keys(attrs),
+            length = keys.length;
+
+        // 如果 object 为空
+        // 根据 attrs 的键值对数量返回布尔值
+        if (object == null) return !length;
+        var obj = Object(object);
+
+        // 遍历 attrs 对象键值对
+        for (var i = 0; i < length; i++) {
+            var key = keys[i];
+
+            // 如果 obj 对象没有 attrs 对象的某个 key
+            // 或者对于某个 key，它们的 value 值不同
+            // 则证明 object 并不拥有 attrs 的所有键值对
+            // 则返回 false
+            if (attrs[key] !== obj[key] || !(key in obj)) return false;
+        }
+
+        return true;
+    },
+    // 判断是否为 DOM 元素
+    isElement: function(obj) {
+        // 确保 obj 不是 null, undefined 等假值
+        // 并且 obj.nodeType === 1
+        return !!(obj && obj.nodeType === 1);
     },
 }
 
@@ -599,8 +758,8 @@ var utils = KS.utils = {
 //         return Object.prototype.toString.apply(obj) == '[object ' + v + ']';
 //     }
 // });
-utils.each(['String', 'Function', 'Array', 'Number', 'RegExp', 'Object', 'Date'], function (v) {
-    KS.utils['is' + v] = function (obj) {
+utils.each(['String', 'Function', 'Array', 'Number', 'RegExp', 'Object', 'Date', 'Arguments', 'Error'], function(v) {
+    KS.utils['is' + v] = function(obj) {
         return Object.prototype.toString.apply(obj) == '[object ' + v + ']';
     }
 });
