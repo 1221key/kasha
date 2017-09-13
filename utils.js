@@ -1396,6 +1396,24 @@ var utils = KS.utils = {
         // 返回排序后的数组
         return names.sort();
     },
+    //返回函数集 functions 组合后的复合函数, 也就是一个函数执行完之后把返回的结果再作为参数赋给下一个函数来执行. 以此类推. 在数学里, 把函数 f(), g(), 和 h() 组合起来可以得到复合函数 f(g(h()))。
+    /**
+     * var greet    = function(name){ return "hi: " + name; };
+        var exclaim  = function(statement){ return statement.toUpperCase() + "!"; };
+        var welcome = utils.compose(greet, exclaim);
+        welcome('moe');
+        => 'hi: MOE!'
+     */
+    compose: function() {
+        var args = arguments;
+        var start = args.length - 1;
+        return function() {
+            var i = start;
+            var result = args[start].apply(this, arguments);
+            while (i--) result = args[i].call(this, result);
+            return result;
+        };
+    },
 }
 
 /**
