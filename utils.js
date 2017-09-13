@@ -624,7 +624,7 @@ var utils = KS.utils = {
         }
         return result;
     },
-    // _.keys({one: 1, two: 2, three: 3});
+    // utils.keys({one: 1, two: 2, three: 3});
     // => ["one", "two", "three"]
     // ===== //
     // 返回一个对象的 keys 组成的数组
@@ -660,7 +660,7 @@ var utils = KS.utils = {
 
         return keys;
     },
-    // _.values({one: 1, two: 2, three: 3});
+    // utils.values({one: 1, two: 2, three: 3});
     // => [1, 2, 3]
     // ===== //
     // 将一个对象的所有 values 值放入数组中
@@ -798,15 +798,15 @@ var utils = KS.utils = {
     // 那么最后一次回调不会被触发
     // **Notice: options 不能同时设置 leading 和 trailing 为 false**
     // 示例：
-    // var throttled = _.throttle(updatePosition, 100);
+    // var throttled = utils.throttle(updatePosition, 100);
     // $(window).scroll(throttled);
     // 调用方式（注意看 A 和 B console.log 打印的位置）：
-    // _.throttle(function, wait, [options])
-    // sample 1: _.throttle(function(){}, 1000)
+    // utils.throttle(function, wait, [options])
+    // sample 1: utils.throttle(function(){}, 1000)
     // print: A, B, B, B ...
-    // sample 2: _.throttle(function(){}, 1000, {leading: false})
+    // sample 2: utils.throttle(function(){}, 1000, {leading: false})
     // print: B, B, B, B ...
-    // sample 3: _.throttle(function(){}, 1000, {trailing: false})
+    // sample 3: utils.throttle(function(){}, 1000, {trailing: false})
     // print: A, A, A, A ...
     // ----------------------------------------- //
     throttle: function(func, wait, options) {
@@ -841,7 +841,7 @@ var utils = KS.utils = {
 
         // 以滚轮事件为例（scroll）
         // 每次触发滚轮事件即执行这个返回的方法
-        // _.throttle 方法返回的函数
+        // utils.throttle 方法返回的函数
         return function() {
             // 记录当前时间戳
             var now = Date.now();
@@ -899,9 +899,9 @@ var utils = KS.utils = {
         };
     },
     // 函数去抖（连续事件触发结束后只触发一次）
-    // sample 1: _.debounce(function(){}, 1000)
+    // sample 1: utils.debounce(function(){}, 1000)
     // 连续事件结束后的 1000ms 后触发
-    // sample 1: _.debounce(function(){}, 1000, true)
+    // sample 1: utils.debounce(function(){}, 1000, true)
     // 连续事件触发后立即触发（此时会忽略第二个参数）
     debounce: function(func, wait, immediate) {
         var timeout, args, context, timestamp, result;
@@ -1096,10 +1096,10 @@ var utils = KS.utils = {
             (a.port == location.port || (a.port == '80' && location.port == '') || (a.port == '' && location.port == '80')));
     },
     // 将一个对象转换为元素为 [key, value] 形式的数组
-    // _.pairs({one: 1, two: 2, three: 3});
+    // utils.pairs({one: 1, two: 2, three: 3});
     // => [["one", 1], ["two", 2], ["three", 3]]
     pairs: function(obj) {
-        var keys = _.keys(obj);
+        var keys = utils.keys(obj);
         var length = keys.length;
         var pairs = Array(length);
         for (var i = 0; i < length; i++) {
@@ -1112,7 +1112,7 @@ var utils = KS.utils = {
     // 返回布尔值
     isMatch: function(object, attrs) {
         // 提取 attrs 对象的所有 keys
-        var keys = _.keys(attrs),
+        var keys = utils.keys(attrs),
             length = keys.length;
 
         // 如果 object 为空
@@ -1162,10 +1162,10 @@ var utils = KS.utils = {
     }(length),
     // 将嵌套的数组展开
     // 如果参数 (shallow === true)，则仅展开一层
-    // _.flatten([1, [2], [3, [[4]]]]);
+    // utils.flatten([1, [2], [3, [[4]]]]);
     // => [1, 2, 3, 4];
     // ====== //
-    // _.flatten([1, [2], [3, [[4]]]], true);
+    // utils.flatten([1, [2], [3, [[4]]]], true);
     // => [1, 2, 3, [[4]]];
     flatten: function(array, shallow) {
 
@@ -1278,7 +1278,7 @@ var utils = KS.utils = {
     // 参数 hasher 是个 function，用来计算 key
     // 如果传入了 hasher，则用 hasher 来计算 key
     // 否则用 key 参数直接当 key（即 memoize 方法传入的第一个参数）
-    // _.memoize(function, [hashFunction])
+    // utils.memoize(function, [hashFunction])
     // 适用于需要大量重复求值的场景
     // 比如递归求解菲波那切数
     memoize: function(func, hasher) {
@@ -1318,7 +1318,84 @@ var utils = KS.utils = {
         for (; str.length < len; str += Math.random().toString(36).substring(2));
         return str.substring(0, len);
     },
+    // 延迟触发某方法
+    // utils.delay(function, wait, *arguments)
+    //  如果传入了 arguments 参数，则会被当作 func 的参数在触发时调用
+    // 其实是封装了「延迟触发某方法」，使其复用
+    delay: function(func, wait) {
+        // 获取 *arguments
+        // 是 func 函数所需要的参数
+        var args = slice.call(arguments, 2);
+        return setTimeout(function() {
+            // 将参数赋予 func 函数
+            return func.apply(null, args);
+        }, wait);
+    },
+    // 第 times 触发执行 func（事实上之后的每次触发还是会执行 func）
+    // 有什么用呢？
+    // 如果有 N 个异步事件，所有异步执行完后执行该回调，即 func 方法（联想 eventproxy）
+    // utils.after 会返回一个函数
+    // 当这个函数第 times 被执行的时候
+    // 触发 func 方法
+    /**render在所有异步都保存成功后才执行
+     * var renderNotes = utils.after(notes.length, render);
+        utils.each(notes, function(note) {
+            note.asyncSave({success: renderNotes});
+        });
+     */
+    after: function(times, func) {
+        return function() {
+            // 函数被触发了 times 了，则执行 func 函数
+            // 事实上 times 次后如果函数继续被执行，也会触发 func
+            if (--times < 1) {
+                return func.apply(this, arguments);
+            }
+        };
+    },
+    // 函数至多被调用 times - 1 次（(but not including) the Nth call）
+    // func 函数会触发 time - 1 次（Creates a version of the function that can be called no more than count times）
+    // func 函数有个返回值，前 time - 1 次触发的返回值都是将参数代入重新计算的
+    // 第 times 开始的返回值为第 times - 1 次时的返回值（不重新计算）
+    // The result of the last function call is memoized and returned when count has been reached.
+    /* 创建一个函数,调用不超过count 次。 当count已经达到时，最后一个函数调用的结果 是被记住并返回 。
+          var monthlyMeeting = utils.before(3, askForRaise);
+         monthlyMeeting();
+         monthlyMeeting();
+         monthlyMeeting();
+         //所以monthlyMeeting第二次调用的和以后调用的结果一样
+    */
+    before: function(times, func) {
+        var memo;
+        return function() {
+            if (--times > 0) {
+                // 缓存函数执行结果
+                memo = func.apply(this, arguments);
+            }
 
+            // func 引用置为空，其实不置为空也用不到 func 了
+            if (times <= 1)
+                func = null;
+
+            // 前 times - 1 次触发，memo 都是分别计算返回
+            // 第 times 次开始，memo 值同 times - 1 次时的 memo
+            return memo;
+        };
+    },
+    // 传入一个对象
+    // 遍历该对象的键值对（包括 own properties 以及 原型链上的）
+    // 如果某个 value 的类型是方法（function），则将该 key 存入数组
+    // 将该数组排序后返回,就是返回对象的方法名
+    methods: function(obj) {
+        // 返回的数组
+        var names = [];
+        for (var key in obj) {
+            // 如果某个 key 对应的 value 值类型是函数
+            // 则将这个 key 值存入数组
+            if (utils.isFunction(obj[key])) names.push(key);
+        }
+        // 返回排序后的数组
+        return names.sort();
+    },
 }
 
 /**
