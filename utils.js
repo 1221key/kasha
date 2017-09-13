@@ -1305,6 +1305,19 @@ var utils = KS.utils = {
         // 返回一个函数（经典闭包）
         return memoize;
     },
+    //获取数组中最大或者最小值,该方法适合一维或者多维数组求最大最小值的情况
+    maxAndMin: function(arr) {
+        return {
+            max: Math.max.apply(null, arr.join(',').split(',')),
+            min: Math.min.apply(null, arr.join(',').split(','))
+        }
+    },
+    //生成指定长度的随机字母数字字符串
+    getRandomStr: function(len) {
+        var str = "";
+        for (; str.length < len; str += Math.random().toString(36).substring(2));
+        return str.substring(0, len);
+    },
 
 }
 
