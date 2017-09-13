@@ -756,6 +756,19 @@ var utils = KS.utils = {
 
         return shuffled;
     },
+    // 随机返回数组或者对象中的一个元素
+    // 如果指定了参数 `n`，则随机返回 n 个元素组成的数组
+    // 如果参数是对象，则数组由 values 组成
+    sample: function(obj, n, guard) {
+        // 随机返回一个元素 null==undefined ==> true
+        if (n == null || guard) {
+            if (!utils.isArrayLike(obj)) obj = utils.values(obj);
+            return obj[utils.random(obj.length - 1)];
+        }
+
+        // 随机返回 n 个
+        return utils.shuffle(obj).slice(0, Math.max(0, n));
+    },
     // 返回某一个范围内的数组成的数组
     range: function(start, stop, step) {
         if (stop == null) {
@@ -960,7 +973,338 @@ var utils = KS.utils = {
             return result;
         };
     },
+    /**
+     * 创建延迟指定时间后执行的函数fn
+     * @method defer
+     * @param { Function } fn 需要延迟执行的函数对象
+     * @param { int } delay 延迟的时间， 单位是毫秒
+     * @warning 该方法的时间控制是不精确的，仅仅只能保证函数的执行是在给定的时间之后，
+     *           而不能保证刚好到达延迟时间时执行。
+     * @return { Function } 目标函数fn的代理函数， 只有执行该函数才能起到延时效果
+     * @example
+     * ```javascript
+     * var start = 0;
+     *
+     * function test(){
+     *     console.log( new Date() - start );
+     * }
+     *
+     * var testDefer = KS.utils.defer( test, 1000 );
+     * //
+     * start = new Date();
+     * //output: (大约在1000毫秒之后输出) 1000
+     * testDefer();
+     * ```
+     */
 
+    /**
+     * 创建延迟指定时间后执行的函数fn, 如果在延迟时间内再次执行该方法， 将会根据指定的exclusion的值，
+     * 决定是否取消前一次函数的执行， 如果exclusion的值为true， 则取消执行，反之，将继续执行前一个方法。
+     * @method defer
+     * @param { Function } fn 需要延迟执行的函数对象
+     * @param { int } delay 延迟的时间， 单位是毫秒
+     * @param { Boolean } exclusion 如果在延迟时间内再次执行该函数，该值将决定是否取消执行前一次函数的执行，
+     *                     值为true表示取消执行， 反之则将在执行前一次函数之后才执行本次函数调用。
+     * @warning 该方法的时间控制是不精确的，仅仅只能保证函数的执行是在给定的时间之后，
+     *           而不能保证刚好到达延迟时间时执行。
+     * @return { Function } 目标函数fn的代理函数， 只有执行该函数才能起到延时效果
+     * @example
+     * ```javascript
+     *
+     * function test(){
+     *     console.log(1);
+     * }
+     *
+     * var testDefer = KS.utils.defer( test, 1000, true );
+     *
+     * //output: (两次调用仅有一次输出) 1
+     * testDefer();
+     * testDefer();
+     * ```
+     */
+    defer: function(fn, delay, exclusion) {
+        var timerID;
+        return function() {
+            if (exclusion) {
+                clearTimeout(timerID);
+            }
+            timerID = setTimeout(fn, delay);
+        };
+    },
+    /**
+     * 删除字符串str的首尾空格
+     * @method trim
+     * @param { String } str 需要删除首尾空格的字符串
+     * @return { String } 删除了首尾的空格后的字符串
+     * @example
+     * ```javascript
+     *
+     * var str = " KS ";
+     *
+     * //output: 9
+     * console.log( str.length );
+     *
+     * //output: 7
+     * console.log( KS.utils.trim( " KS " ).length );
+     *
+     * //output: 9
+     * console.log( str.length );
+     *
+     *  ```
+     */
+    trim: function(str) {
+        return str.replace(/(^[ \t\n\r]+)|([ \t\n\r]+$)/g, '');
+    },
+
+    /**
+     * 克隆对象
+     * @method clone
+     * @param { Object } source 源对象
+     * @return { Object } source的一个副本
+     */
+
+    /**
+     * 深度克隆对象，将source的属性克隆到target对象， 会覆盖target重名的属性。
+     * @method clone
+     * @param { Object } source 源对象
+     * @param { Object } target 目标对象
+     * @return { Object } 附加了source对象所有属性的target对象
+     */
+    clone: function(source, target) {
+        var tmp;
+        target = target || {};
+        for (var i in source) {
+            if (source.hasOwnProperty(i)) {
+                tmp = source[i];
+                if (typeof tmp == 'object') {
+                    target[i] = utils.isArray(tmp) ? [] : {};
+                    utils.clone(source[i], target[i])
+                } else {
+                    target[i] = tmp;
+                }
+            }
+        }
+        return target;
+    },
+    isCrossDomainUrl: function(url) {
+        var a = document.createElement('a');
+        a.href = url;
+        if (browser.ie) {
+            a.href = a.href;
+        }
+        return !(a.protocol == location.protocol && a.hostname == location.hostname &&
+            (a.port == location.port || (a.port == '80' && location.port == '') || (a.port == '' && location.port == '80')));
+    },
+    // 将一个对象转换为元素为 [key, value] 形式的数组
+    // _.pairs({one: 1, two: 2, three: 3});
+    // => [["one", 1], ["two", 2], ["three", 3]]
+    pairs: function(obj) {
+        var keys = _.keys(obj);
+        var length = keys.length;
+        var pairs = Array(length);
+        for (var i = 0; i < length; i++) {
+            pairs[i] = [keys[i], obj[keys[i]]];
+        }
+        return pairs;
+    },
+    // attrs 参数为一个对象
+    // 判断 object 对象中是否有 attrs 中的所有 key-value 键值对
+    // 返回布尔值
+    isMatch: function(object, attrs) {
+        // 提取 attrs 对象的所有 keys
+        var keys = _.keys(attrs),
+            length = keys.length;
+
+        // 如果 object 为空
+        // 根据 attrs 的键值对数量返回布尔值
+        if (object == null) return !length;
+
+        // 遍历 attrs 对象键值对
+        for (var i = 0; i < length; i++) {
+            var key = keys[i];
+
+            // 如果 obj 对象没有 attrs 对象的某个 key
+            // 或者对于某个 key，它们的 value 值不同
+            // 则证明 object 并不拥有 attrs 的所有键值对
+            // 则返回 false
+            if (attrs[key] !== object[key] || !(key in object)) return false;
+        }
+
+        return true;
+    },
+    // 如果是数组（类数组），返回长度（length 属性）
+    // 如果是对象，返回键值对数量
+    size: function(obj) {
+        if (obj == null) return 0;
+        return utils.isArrayLike(obj) ? obj.length : utils.keys(obj).length;
+    },
+    // 伪数组 -> 数组
+    // 对象 -> 提取 value 值组成数组
+    // 返回数组
+    toArray: function(obj) {
+        if (!obj) return [];
+
+        // 如果是数组，则返回副本数组
+        // 也可用 obj.concat() 
+        if (utils.isArray(obj)) return Array.prototype.slice.call(obj);
+
+        // 如果是类数组，则重新构造新的数组
+        if (utils.isArrayLike(obj)) return Array.prototype.slice.call(obj);
+
+        // 如果是对象，则返回 values 集合
+        return utils.values(obj);
+    },
+    //闭包保存length，防止反复访问数组的length属性
+    getLength: function(key) {
+        return function(obj) {
+            return obj == null ? void 0 : obj[key];
+        };
+    }(length),
+    // 将嵌套的数组展开
+    // 如果参数 (shallow === true)，则仅展开一层
+    // _.flatten([1, [2], [3, [[4]]]]);
+    // => [1, 2, 3, 4];
+    // ====== //
+    // _.flatten([1, [2], [3, [[4]]]], true);
+    // => [1, 2, 3, [[4]]];
+    flatten: function(array, shallow) {
+
+        // 递归调用数组，将数组展开
+        // 即 [1, 2, [3, 4]] => [1, 2, 3, 4]
+        // flatten(array, shallow, false)
+        // flatten(arguments, true, true, 1)
+        // flatten(arguments, true, true)
+        // flatten(arguments, false, false, 1)
+        // ===== //
+        // input => Array 或者 arguments
+        // shallow => 是否只展开一层
+        // strict === true，通常和 shallow === true 配合使用
+        // 表示只展开一层，但是不保存非数组元素（即无法展开的基础类型）
+        // flatten([[1, 2], 3, 4], true, true) => [1, 2]
+        // flatten([[1, 2], 3, 4], false, true) = > []
+        // startIndex => 从 input 的第几项开始展开
+        // ===== //
+        // 如果 strict 参数为 true，那么 shallow 也为 true
+        // 也就是展开一层，同时把非数组过滤
+        // [[1, 2], [3, 4], 5, 6] => [1, 2, 3, 4]
+        var flatten = function(input, shallow, strict, startIndex) {
+            // output 数组保存结果
+            // 即 flatten 方法返回数据
+            // idx 为 output 的累计数组下标
+            var output = [],
+                idx = 0;
+
+            // 根据 startIndex 变量确定需要展开的起始位置
+            for (var i = startIndex || 0, length = utils.getLength(input); i < length; i++) {
+                var value = input[i];
+                // 数组 或者 arguments
+                // 注意 isArrayLike 还包括 {length: 10} 这样的，过滤掉
+                if (utils.isArrayLike(value) && (utils.isArray(value) || utils.isArguments(value))) {
+                    // flatten current level of array or arguments object
+                    // (!shallow === true) => (shallow === false)
+                    // 则表示需深度展开
+                    // 继续递归展开
+                    if (!shallow)
+                    // flatten 方法返回数组
+                    // 将上面定义的 value 重新赋值
+                        value = flatten(value, shallow, strict);
+
+                    // 递归展开到最后一层（没有嵌套的数组了）
+                    // 或者 (shallow === true) => 只展开一层
+                    // value 值肯定是一个数组
+                    var j = 0,
+                        len = value.length;
+
+                    // 这一步貌似没有必要
+                    // 毕竟 JavaScript 的数组会自动扩充
+                    // 但是这样写，感觉比较好，对于元素的 push 过程有个比较清晰的认识
+                    output.length += len;
+
+                    // 将 value 数组的元素添加到 output 数组中
+                    while (j < len) {
+                        output[idx++] = value[j++];
+                    }
+                } else if (!strict) {
+                    // 如果是深度展开，即 shallow 参数为 false
+                    // 那么当最后 value 不是数组，是基本类型时
+                    // 肯定会走到这个 else-if 判断中
+                    // 而如果此时 strict 为 true，则不能跳到这个分支内部
+                    // 所以 shallow === false 如果和 strict === true 搭配
+                    // 调用 flatten 方法得到的结果永远是空数组 []
+                    output[idx++] = value;
+                }
+            }
+
+            return output;
+        };
+
+        // array => 需要展开的数组
+        // shallow => 是否只展开一层
+        // false 为 flatten 方法 strict 变量
+        return flatten(array, shallow, false);
+    },
+    // 将数组转化为对象
+    object: function(list, values) {
+        var result = {};
+        for (var i = 0, length = utils.getLength(list); i < length; i++) {
+            if (values) {
+                result[list[i]] = values[i];
+            } else {
+                result[list[i][0]] = list[i][1];
+            }
+        }
+        return result;
+    },
+    // 指定一系列方法（methodNames）中的 this 指向（object）
+    // bindAll(object, *methodNames)
+    bindAll: function(obj) {
+        var i, length = arguments.length,
+            key;
+
+        // 如果只传入了一个参数（obj），没有传入 methodNames，则报错
+        if (length <= 1)
+            throw new Error('bindAll必须传入方法名');
+
+        // 遍历 methodNames
+        for (i = 1; i < length; i++) {
+            key = arguments[i];
+            // 逐个绑定
+            //obj[key] = Function.prototype.bind.call(obj[key],obj);
+            obj[key] = obj[key].bind(obj);
+        }
+        return obj;
+    },
+    //「记忆化」，存储中间运算结果，提高效率
+    // 参数 hasher 是个 function，用来计算 key
+    // 如果传入了 hasher，则用 hasher 来计算 key
+    // 否则用 key 参数直接当 key（即 memoize 方法传入的第一个参数）
+    // _.memoize(function, [hashFunction])
+    // 适用于需要大量重复求值的场景
+    // 比如递归求解菲波那切数
+    memoize: function(func, hasher) {
+        var memoize = function(key) {
+            // 储存变量，方便使用
+            var cache = memoize.cache;
+
+            // 求 key
+            // 如果传入了 hasher，则用 hasher 函数来计算 key
+            // 否则用 参数 key（即 memoize 方法传入的第一个参数）当 key
+            var address = '' + (hasher ? hasher.apply(this, arguments) : key);
+
+            // 如果这个 key 还没被 hash 过（还没求过值）
+            if (!utils.has(cache, address))
+                cache[address] = func.apply(this, arguments);
+
+            // 返回
+            return cache[address];
+        };
+
+        // cache 对象被当做 key-value 键值对缓存中间运算结果
+        memoize.cache = {};
+
+        // 返回一个函数（经典闭包）
+        return memoize;
+    },
 
 }
 
