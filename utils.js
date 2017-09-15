@@ -188,11 +188,11 @@ var utils = KS.utils = {
      *
      * var str = 'border-top';
      *
-     * //output: borderTop
+     *   // output: borderTop
      * console.log( KS.utils.cssStyleToDomStyle( str ) );
      *
      * ```
-     */
+     **/
     cssStyleToDomStyle: function() {
         cache = {};
         return function(cssName) {
@@ -1413,6 +1413,196 @@ var utils = KS.utils = {
             while (i--) result = args[i].call(this, result);
             return result;
         };
+    },
+    // 判断两个对象是否一样
+    // new Boolean(true)，true 被认为 equal
+    // [1, 2, 3], [1, 2, 3] 被认为 equal
+    // 0 和 -0 被认为 unequal
+    // NaN 和 NaN 被认为 equal
+    /*   var a = Object.create(null);
+         a.x = 1;
+        var b = {x:1}; a,b被认为是equal
+     */
+    isEqual: function(a, b) {
+
+
+        // isEqual方法的内部递归比较
+        // 该内部方法会被递归调用
+        var eq = function(a, b, aStack, bStack) {
+            //分析：为啥有两个stack，原因就判断那种自嵌套结构。由于是递归，得想办法把上一层对象传进来。不然怎么会知道是否自嵌套结构呢。
+            // a === b 时
+            // 需要注意 `0 === -0` 这个 special case
+            // 0 和 -0 被认为不相同（unequal）
+            // 至于原因可以参考上面的链接
+            if (a === b) return a !== 0 || 1 / a === 1 / b;
+
+            // null == undefined ==> true
+            // 如果 a 和 b 有一个为 null（或者 undefined）
+            // 判断 a === b
+            if (a == null || b == null) return a === b;
+
+            // 比较 `[[Class]]` names.
+            var className = Object.prototype.toString.call(a);
+
+            // 如果 a 和 b 类型不相同，则返回 false
+            if (className !== Object.prototype.toString.call(b)) return false;
+
+            switch (className) {
+                // Strings, numbers, regular expressions, dates, booleans可以直接根据其 value 值来比较是否相等
+                case '[object RegExp]':
+                    //  /ab/+""==="/ab/"
+                case '[object String]':
+                    //"5" !=== new String(5) 但值相等，都是字符串“5”
+                    // 转为 String 类型进行比较
+                    return '' + a === '' + b;
+
+                    // RegExp 和 String 可以看做一类
+                    // 如果 obj 为 RegExp 或者 String 类型
+                    // 那么 '' + obj 会将 obj 强制转为 String
+                    // 根据 '' + a === '' + b 即可判断 a 和 b 是否相等
+
+                case '[object Number]':
+
+                    // Object(NaN) is equivalent to NaN
+                    // 如果 +a !== +a
+                    // 那么 a 就是 NaN
+                    // 判断 b 是否也是 NaN 即可
+                    if (+a !== +a) return +b !== +b;
+
+                    // An `egal` comparison is performed for other numeric values.
+                    // 排除了 NaN 干扰
+                    // 还要考虑 0 的干扰
+                    // 用 +a 将 Number() 形式转为基本类型
+                    // 即 +Number(1) ==> 1
+                    // 0 需要特判
+                    // 如果 a 为 0，判断 1 / +a === 1 / b
+                    // 否则判断 +a === +b
+                    return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+
+                    // 如果 a 为 Number 类型
+                    // 要注意 NaN 这个 special number
+                    // NaN 和 NaN 被认为 equal
+                    // ================
+
+                case '[object Date]':
+                case '[object Boolean]':
+                    return +a === +b;
+
+                    // Date 和 Boolean 可以看做一类
+                    // 如果 obj 为 Date 或者 Boolean
+                    // 那么 +obj 会将 obj 转为 Number 类型
+                    // 然后比较即可
+                    // +new Date() 是当前时间距离 1970 年 1 月 1 日 0 点的毫秒数
+                    // +true => 1
+                    // +new Boolean(false) => 0
+            }
+
+
+            // 判断 a 是否是数组
+            var areArrays = className === '[object Array]';
+
+            // 如果 a 不是数组类型
+            if (!areArrays) {
+                // 如果 a 不是 object 或者 b 不是 object
+                // 则返回 false
+                if (typeof a != 'object' || typeof b != 'object') return false;
+
+                // 通过上个步骤的 if 过滤
+                // !!保证到此的 a 和 b 均为对象!!
+                // Object instance Object ==> true
+                /**
+                 * 这个if主要针对对象的判断，进入此if的前提是a和b，都已经是对象了。逻辑是这样的，if里面返回的是false，即判断哪种情况下认为二者不等。
+                 * 如果二者的constructor不等，一般认为对象不可能值相等。但有种情况例外，来自不同的iframe的Object实例，因为其构造器Object是属于不同window的函数Object，自然不等，但是有可能值相等。
+                 * 所以要排除掉这种情况，utils.isFunction(aCtor) && aCtor instanceof aCtor 表示“一个函数是自己的实例”，如果该函数是Object，自然为true，因此前面取非表示排除了。
+                 * 而后面'constructor' in a && 'constructor' in b，表示要求ab对象都有构造器属性。关于为啥有这一条。都有构造器，那没啥好说的。我们可以假设一下a没有，b有，
+                 * 那么aCtor是undefined，则if是不进的，也就是说这种情况下也有可能认为ab相等，另外，来自不同iframe的对象实例，要使用firefox浏览器测试。chrome会报错。
+                 */
+                var aCtor = a.constructor,
+                    bCtor = b.constructor;
+                if (aCtor !== bCtor && !(utils.isFunction(aCtor) && aCtor instanceof aCtor &&
+                        utils.isFunction(bCtor) && bCtor instanceof bCtor) &&
+                    ('constructor' in a && 'constructor' in b)) {
+                    return false;
+                }
+            }
+
+
+
+            // 第一次调用 eq() 函数，没有传入 aStack 和 bStack 参数
+            // 之后递归调用都会传入这两个参数
+            aStack = aStack || [];
+            bStack = bStack || [];
+
+            var length = aStack.length;
+
+            while (length--) {
+                /**自嵌套结构判断,如下面的a
+                 *var a = {name : '11'};
+                 *a.o = a;
+                 *var c = a.o;
+                 *alert(c.name);
+                 */
+                //如果a有嵌套现象，就看看b是否也有，注意a有,就返回了
+                if (aStack[length] === a) return bStack[length] === b;
+            }
+
+            //如果上面while中没有进if，这里把a和b放到栈里
+            aStack.push(a);
+            bStack.push(b);
+
+            // 递归比较对象和数组
+            // 将嵌套的对象和数组展开
+            // 如果 a 是数组
+            // 因为嵌套，所以需要展开深度比较
+            if (areArrays) {
+                // 根据 length 判断是否应该继续递归对比
+                length = a.length;
+                // 如果 a 和 b length 属性大小不同，返回false
+                if (length !== b.length) return false;
+
+                // //递归比较每个属性值是否相等
+                while (length--) {
+                    // 递归
+                    if (!eq(a[length], b[length], aStack, bStack)) return false;
+                }
+            } else {
+                // 如果 a 不是数组，这里的话即是对象
+                // 进入这个判断分支
+
+                // Deep compare objects.
+                // 两个对象的深度比较
+                var keys = utils.keys(a),
+                    key;
+                length = keys.length;
+
+                // Ensure that both objects contain the same number of properties before comparing deep equality.
+                // a 和 b 对象的键数量不同
+                // 那还比较毛？
+                if (utils.keys(b).length !== length) return false;
+
+                while (length--) {
+                    // Deep compare each member
+                    // 递归比较
+                    key = keys[length];
+                    if (!(utils.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+                }
+            }
+
+            // 与 aStack.push(a) 对应
+            // 此时 aStack 栈顶元素正是 a
+            // 而代码走到此步
+            // a 和 b isEqual 确认
+            // 所以 a，b 两个元素可以出栈
+            //移除栈里最新的元素。说明这层是相等的
+            aStack.pop();
+            bStack.pop();
+
+            // 深度搜索递归比较完毕
+            // 放心地 return true
+            return true;
+        };
+
+        return eq(a, b);
     },
 }
 
