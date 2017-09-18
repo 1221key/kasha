@@ -1744,6 +1744,21 @@ var utils = KS.utils = {
          * ```
          */
     }(url, opts),
+    randomAToZ: function(num) { //随机生成5个字母
+        var result = [];
+        var num = num || 6;
+
+        function getRanNum() {
+            result = [];
+            for (var i = 0; i < num; i++) {
+                var ranNum = Math.ceil(Math.random() * 25); //生成一个0到25的数字
+                //大写字母'A'的ASCII是65,A~Z的ASCII码就是65 + 0~25;然后调用String.fromCharCode()传入ASCII值返回相应的字符并push进数组里,a的ASCII码是97
+                result.push(String.fromCharCode(97 + ranNum));
+            }
+            return result.join("")
+        }
+        return getRanNum()
+    }
 }
 
 /**
