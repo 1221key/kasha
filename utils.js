@@ -422,19 +422,15 @@ var utils = KS.utils = {
             win = win || window;
             var doc = win.document;
             onready && fnArr.push(onready);
-            if (doc.readyState === "complete") {
+            //如果doReady执行过一次，后面再次调用该方法时直接执行
+            doc.isReady && doReady(doc);
+            doc.addEventListener("DOMContentLoaded", function() {
+                //doc.removeEventListener("DOMContentLoaded", arguments.callee, false);
                 doReady(doc);
-            } else {
-                doc.isReady && doReady(doc);
-                doc.addEventListener("DOMContentLoaded", function() {
-                    doc.removeEventListener("DOMContentLoaded", arguments.callee, false);
-                    doReady(doc);
-                }, false);
-                win.addEventListener('load', function() {
-                    doReady(doc)
-                }, false);
-            }
-
+            }, false);
+            win.addEventListener('load', function() {
+                doReady(doc)
+            }, false);
         }
     }(),
     //格式化url
@@ -515,12 +511,8 @@ var utils = KS.utils = {
         // Return the modified object
         return target;
     },
-    isPlainObject: function(obj) { //from jq
-        // Not plain objects:
-        // - Any object or value whose internal [[Class]] property is not "[object Object]"
-        // - DOM nodes
-        // - window
-        if (!KS.utils.isObject(obj, "Object") || obj.nodeType || KS.utils.isWindow(obj)) {
+    isPlainObject: function(obj) {
+        if (!KS.utils.isObject(obj)) {
             return false;
         }
 
@@ -529,8 +521,6 @@ var utils = KS.utils = {
             return false;
         }
         //如果函数执行到这里还没有return ,可以确定参数obj 是一个通过{}或者new Object构造的纯粹的对象
-        // If the function hasn't returned already, we're confident that
-        // |obj| is a plain object, created by {} or constructed with new Object
         return true;
     },
     isEmptyObject: function(obj) {
@@ -539,9 +529,6 @@ var utils = KS.utils = {
             return false;
         }
         return true;
-    },
-    isWindow: function(obj) {
-        return obj != null && obj === obj.window;
     },
     // 返回一个 [min, max] 范围内的任意整数
     random: function(min, max) {
@@ -560,7 +547,11 @@ var utils = KS.utils = {
         return KS.utils.isNumber(obj) && obj !== +obj;
     },
     isBoolean: function(obj) {
+        //前面两个子表达式是为了提高性能而已
         return obj === true || obj === false || Object.prototype.toString.call(obj) === '[object Boolean]';
+    },
+    isWindow: function(obj) { //用Object.prototype.toString.call(obj)也是可以的，在ie9以及以上都是ok的，但这样性能更好
+        return obj != null && obj === obj.window;
     },
     // 判断是否是 null
     isNull: function(obj) {
@@ -626,9 +617,9 @@ var utils = KS.utils = {
         // 如果传入的参数不是对象，则返回空数组
         if (!KS.utils.isObject(obj)) return [];
 
-        // 如果浏览器支持 ES5 Object.key() 方法
+        // 如果浏览器支持 ES5 Object.keys() 方法
         // 则优先使用该方法
-        if (Object.key) return Object.key(obj);
+        if (Object.keys) return Object.keys(obj);
 
         var keys = [];
 
