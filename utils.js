@@ -222,7 +222,7 @@ var utils = KS.utils = {
     /**
      * 动态加载文件到doc中，加载成功后执行的回调函数fn
      * @method loadFile
-     * @param { DomDocument } document 需要加载资源文件的文档对象
+     * @param { DomDocument } doc 需要加载资源文件的文档对象
      * @param { Object } options 加载资源文件的属性集合， 该集合支持的值是script标签和style标签支持的所有属性。
      * @param { Function } fn 资源文件加载成功之后执行的回调
      * @warning 对于在同一个文档中多次加载同一URL的文件， 该方法会在第一次加载之后缓存该请求，
@@ -245,16 +245,11 @@ var utils = KS.utils = {
         var tmpList = [];
 
         function getItem(doc, obj) {
-            try {
-                for (var i = 0, ci; ci = tmpList[i++];) {
-                    if (ci.doc === doc && ci.url == (obj.src || obj.href)) {
-                        return ci;
-                    }
+            for (var i = 0, ci; ci = tmpList[i++];) {
+                if (ci.doc === doc && ci.url == (obj.src || obj.href)) {
+                    return ci;
                 }
-            } catch (e) {
-                return null;
             }
-
         }
 
         return function(doc, obj, fn) {
@@ -290,16 +285,13 @@ var utils = KS.utils = {
             for (var p in obj) { //添加属性
                 element.setAttribute(p, obj[p]);
             }
-            element.onload = element.onreadystatechange = function() { //动态加载的标签加载完毕后触发此事件
-                if (!this.readyState || /loaded|complete/.test(this.readyState)) {
-                    item = getItem(doc, obj);
-                    if (item.funs.length > 0) {
-                        item.ready = 1;
-                        for (var fi; fi = item.funs.pop();) {
-                            fi();
-                        }
+            element.onload = function() { //动态加载的标签加载完毕后触发此事件
+                item = getItem(doc, obj);
+                if (item.funs.length > 0) {
+                    item.ready = 1;
+                    for (var fi; fi = item.funs.pop();) {
+                        fi();
                     }
-                    element.onload = element.onreadystatechange = null; //清空加载标签的load事件
                 }
             };
             element.onerror = function() {
@@ -348,13 +340,13 @@ var utils = KS.utils = {
     /**
      * 把rgb格式的颜色值转换成16进制格式
      * @method fixColor
-     * @param { String } rgb格式的颜色值
-     * @param { String }
+     * @param { String } value rgb格式的颜色值
+     * @return { String }
      * @example
      * rgb(255,255,255)  => "#ffffff"
      */
-    fixColor: function(name, value) {
-        if (/color/i.test(name) && /rgba?/.test(value)) {
+    fixColor: function(value) {
+        if (/rgba?/.test(value)) {
             var array = value.split(",");
             if (array.length > 3)
                 return "";
